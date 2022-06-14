@@ -3,7 +3,7 @@ import Link from 'next/link'
 export default function IndexPage() {
   return (
     <div className="main">
-      <Link href="/birds">
+      <Link href="/timeScale">
         <a>Birds Example</a>
       </Link>
       <Link href="/boxes">
