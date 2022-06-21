@@ -1,11 +1,11 @@
 import { Suspense, useRef,useEffect,useMemo,useState } from 'react'
 import * as THREE from "three";
 import { Canvas, useThree, useFrame,useLoader,extend } from '@react-three/fiber'
-import {shaderMaterial, useScroll,ScrollControls, Scroll, Preload, Image as ImageImpl, OrbitControls,useTexture,MapControls,Html } from '@react-three/drei'
+import {Sky,Stars, useScroll,ScrollControls, Scroll, Preload, Image as ImageImpl, Float, Html } from '@react-three/drei'
 import Box from '../components/Image'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { CustomPass } from '../components/CustomPass.js';
-import Loader from '../components/Loader'
+import LoadingScreen from '../components/LoadingScreen'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import glsl from "babel-plugin-glsl/macro"; // <--- Module to import
@@ -14,7 +14,8 @@ import { DotScreenShader } from 'three/examples/jsm/shaders/DotScreenShader.js';
 // Inside your app
 import { useControls } from 'leva'
 import gsap from "gsap";
-
+import { ref } from 'valtio';
+import myState from "../components/store"
 
 const settings = {
   progress: 1,
@@ -24,7 +25,7 @@ function distort(){
   gsap.to(settings, {progress:0,duration:2})
 }
 function unDistort(){
-  gsap.to(settings, {progress:1,duration:1})
+  gsap.to(settings, {progress:1,duration:1, delay: 2})
 }
 
 unDistort()
@@ -165,24 +166,162 @@ function MyEffects() {
     final.setSize(size.width, size.height);
   }, [base, final, size])
 
-  const { toggle } = useControls({ toggle: true })
-  useEffect(()=>{
-    if(toggle === true){
-      gsap.to(base.passes[1].uniforms.progress, {value:1,duration:2})
-    }else{
-      gsap.to(base.passes[1].uniforms.progress, {value:0,duration:1})
-    }
-  },[toggle])
+  // const { toggle } = useControls({ toggle: true })
+  // useEffect(()=>{
+  //   if(toggle === true){
+  //     gsap.to(base.passes[1].uniforms.progress, {value:1,duration:2})
+  //   }else{
+  //     gsap.to(base.passes[1].uniforms.progress, {value:0,duration:1})
+  //   }
+  // },[toggle])
   
   const data = useScroll();
-  console.log(data)
 
-  useEffect(()=>{
+
+  var key = 37;
+  var keyboardEvent = document.createEvent('KeyboardEvent')
+
+
+  // if(gamepads[0].buttons[4].pressed === true && base.passes[1].uniforms.scale.value > -10){
+  //   base.passes[1].uniforms.scale.value -= 0.01
+  // }
+
+  const [showSecondary,setShowSecondary] = useState(false)
+  return useFrame((state,delta) => {
+    const gamepads = navigator.getGamepads()
+
     
+    if(gamepads[0]){
 
-  }, [data.delta])
-  return useFrame((delta) => {
-    base.passes[1].uniforms.scale.value = Scale    // if(!toggle){
+
+      if(gamepads[0].buttons[3].pressed === true){
+        myState.pause = true
+      }
+      // if(gamepads[0].buttons[2].pressed === true){
+      //   myState.pause = false
+      // }
+
+
+      if(gamepads[0].buttons[5].pressed === true && base.passes[1].uniforms.scale.value < 8){
+        base.passes[1].uniforms.scale.value += 0.025
+
+      }
+      if(gamepads[0].buttons[4].pressed === true && base.passes[1].uniforms.scale.value > -10){
+        base.passes[1].uniforms.scale.value -= 0.025
+      }
+
+      console.log(gamepads[0].buttons[2].value)
+      if(gamepads[0].buttons[2].value >0.5 && showSecondary === false ){
+
+          gsap.to(state.camera.position, {y:10,duration:1, onComplete:setShowSecondary(true)})
+        
+      }
+      if(gamepads[0].buttons[2].value >0.5 && showSecondary === true ){
+
+          // setShowSecondary(false)
+          gsap.to(state.camera.position, {y:0,duration:1, onComplete:setShowSecondary(false)})
+        
+      }
+
+      // if(gamepads[0].buttons[2].value >0.5 ){
+      //   if(showSecondary === true){
+      //     setShowSecondary(true)
+
+      //     gsap.to(state.camera.position, {y:10,duration:1})
+      //     }
+        
+   
+       
+      // }
+
+
+
+      if(gamepads[0].buttons[8].pressed === true){
+        myState.pause = false
+      }
+     
+
+ 
+ 
+      // if(gamepads[0].axes[0]>0.8  && state.camera.position.x < 30){
+      //   console.log(state.camera)
+      //   state.camera.position.x += 0.5
+      // }
+      // if(gamepads[0].axes[0]<-0.8  && state.camera.position.x > -25){
+      //   console.log(state.camera)
+      //   state.camera.position.x -= 0.5
+      // }
+
+      if(gamepads[0].axes[1]<-0.8 && state.camera.position.z > 4){
+        console.log(state.camera)
+        state.camera.position.z -= 0.05
+      }
+      if(gamepads[0].axes[1]>0.8 && state.camera.position.z < 8){
+        console.log(state.camera)
+        state.camera.position.z += 0.05
+      }
+
+//       KeyboardEvent {isTrusted: true, key: 'ArrowRight', code: 'ArrowRight', location: 0, ctrlKey: false, …}
+// isTrusted: true
+// altKey: false
+// bubbles: true
+// cancelBubble: false
+// cancelable: true
+// charCode: 0
+// code: "ArrowRight"
+// composed: true
+// ctrlKey: false
+// currentTarget: null
+// defaultPrevented: false
+// detail: 0
+// eventPhase: 0
+// isComposing: false
+// key: "ArrowRight"
+// keyCode: 39
+// location: 0
+// metaKey: false
+// path: (4) [body, html, document, Window]
+// repeat: false
+// returnValue: true
+// shiftKey: false
+// sourceCapabilities: InputDeviceCapabilities {firesTouchEvents: false}
+// srcElement: body
+// target: body
+// timeStamp: 438818.69999999925
+// type: "keydown"
+// view: Window {window: Window, self: Window, document: document, name: '', location: Location, …}
+// which: 39
+// [[Prototype]]: KeyboardEvent
+
+      if(gamepads[0].buttons[0].pressed === true){
+        gsap.to(base.passes[1].uniforms.progress, {value:1,duration:2})
+        myState.effectToggle = true
+      
+      }
+      if(gamepads[0].buttons[1].pressed === true){
+        gsap.to(base.passes[1].uniforms.progress, {value:0.0,duration:2})
+        myState.effectToggle = false
+      }
+
+      if(gamepads[0].buttons[9].pressed === true){
+        myState.showMenu = true
+      }
+      if(gamepads[0].buttons[8].pressed === true){
+        myState.showMenu = false
+      }
+    }
+
+    if(myState.shouldDistort === true){
+      gsap.to(base.passes[1].uniforms.progress, {value:1,duration:5})
+      gsap.to(base.passes[1].uniforms.progress, {value:0,duration:6, delay: 3
+      })
+
+    }
+    // console.log(myState.showMenu)
+    //select: 8
+    //start : 9
+    // base.passes[1].uniforms.scale.value = Scale    
+    // if(!toggle){
     //   base.passes[1].uniforms.progress.value = THREE.MathUtils.damp(base.passes[1].uniforms.progress.value, data.delta*50, 4, .10)
 
     // }
@@ -195,22 +334,136 @@ function MyEffects() {
   },1);
 }
 
+function SceneFog() {
+  const { fog } = useControls({ fog: true })
+
+  return(
+    <>
+    {
+      fog?
+      <fog attach="fog" color="black" near={1} far={20} />
+    :
+    null}
+    </>
+
+    
+  )
+}
+
+function StartMenu(){
+  let [showMenu,setShowMenu] = useState(false)
+  useFrame(() => {
+  
+  if(myState.showMenu === true ){
+    setShowMenu(true)
+  }else{
+    setShowMenu(false)
+  }
+  });
+
+  return(
+    <>
+    {showMenu?
+      <Suspense fallback={null}>
+      <Html fullscreen>
+      <div className='main-container'>
+
+      <div className='menu-container' >
+     
+    
+     <div class="frame1"> 
+     <img src="./logo.png" />
+     </div> 
+     <div class="frame">
+       <div class="btn-group">
+           <button class="button" type="button"><h2>NEW GAME</h2></button>
+           <button class="button" type="button"><h2>LOAD GAME</h2></button>    
+           <button class="button" type="button"><h2>TUTORIAL</h2></button>
+       </div>
+       </div>
+  
+     
+    
+  
+   
+  
+   
+   </div>
+   </div>
+
+      </Html>
+  
+      </Suspense>
+  
+    
+    :<>
+    </>}
+    </>
+
+   
+  )
+}
+
+
+
+
+
+function ControllerContainer(){
+    window.addEventListener('gamepadconnected', function(e) {
+      console.log('gamepad connected')
+      const gp = navigator.getGamepads()[e.gamepad.index]
+    })
+    window.addEventListener('gamepaddisconnected', function(e) {
+      console.log('gamepad disconnected')
+    })
+
+    //buttons[0]: X (blue)
+    //buttons[1]: A (red)
+    //buttons[2]: B (yellow)
+    //buttons[3]: Y (green)
+    //buttons[4]: Left Bumper
+    //buttons[5]: Right Bumper
+    //axes[0]: left and right stick (-1:1)
+    //axes[1]: up and down stick (-1:1)
+
+
+  useFrame(()=>{
+    const gamepads = navigator.getGamepads()
+    if(gamepads[0]){
+      const gamepadState= {
+        buttons: [
+
+        ]
+      }
+    }
+  })
+
+  return(null)
+}
 
 export default function BoxesPage() {
  
-  return (
-    <>
-    <Canvas gl={{ antialias: true }} dpr={[1, 1.5]}>
-        <color attach="background" args={['#ffffff']} />
-        <Loader />
-        <ambientLight intensity={1} /> 
-        {/* <fog /> */}
-        <pointLight position={[40, 40, 40]} /> 
+ 
 
-          <ScrollControls visible infinite horizontal damping={4} pages={4} distance={1}>
+  return (
+   
+    <>
+
+
+     
+    <Canvas gl={{ antialias: true}} toneMapping={false}>
+        <LoadingScreen />
+          <StartMenu />
+        {/* <ControllerContainer /> */}
+
+        <ambientLight intensity={1} /> 
+        <pointLight position={[40, 40, 40]} /> 
+          <SceneFog />
+          <ScrollControls visible={false} infinite horizontal damping={2} pages={6} distance={1}>
               <Scroll>
               <Suspense fallback={null}>
               <Pages />
+
 
               </Suspense>
 
@@ -218,13 +471,53 @@ export default function BoxesPage() {
               </Scroll>
 
           </ScrollControls>
-
+          <Sphere />
+          {/* <Sky /> */}
           <Preload />
       </Canvas>
     </>
   )
 }
 
+
+function Sphere(){
+  const ref=useRef()
+  const stars=useRef()
+  const bottleMaterial = new THREE.MeshPhysicalMaterial({
+    color: '#efefef',
+    transmission: 1,
+    roughness: 0.35,
+    thickness: 500,
+    envMapIntensity: 4,
+  })
+  useFrame(()=>{
+    ref.current.rotation.z += .1
+    stars.current.rotation.z += .001
+    stars.current.rotation.x -= .001
+
+  })
+
+
+  return(
+    <>
+    <ambientLight intensity={2} color={'white'}/>
+    <pointLight color={'white'} position={[0,5,-5]} intensity={2} distance={100}/>
+    <mesh ref={ref} material={bottleMaterial}>
+    <sphereBufferGeometry args={[20, 32,32]}/>
+    {/* <meshNormalMaterial side={THREE.DoubleSide} color={0xffffff} attach="material" /> */}
+    {/* <meshStandardMaterial metalness={2} roughness={0.32} color={'gold'} side={THREE.DoubleSide} attach="material" /> */}
+   </mesh>
+   <Stars toneMapping={false} ref={stars} radius={30} depth={10} count={3000} factor={10} saturation={1} fade  speed={2} />
+
+    </>
+
+  )
+}
+
+function setEffectToggle(){
+  myState.effectToggle = false
+  console.log('hi')
+}
 
 
 
@@ -236,15 +529,32 @@ function Image(props) {
   const group = useRef();
   const data = useScroll();
   useFrame((state, delta) => {
-    if(toggle){
+     if(myState.effectToggle === true){
       group.current.position.y = THREE.MathUtils.damp(group.current.position.y, -2, 4, delta);
-      group.current.rotation.z = THREE.MathUtils.damp(group.current.rotation.z, -0.1, 4, delta);
-    }else{
-      group.current.rotation.z = THREE.MathUtils.damp(group.current.rotation.z, 0, 1, delta);
-      group.current.position.y = THREE.MathUtils.damp(group.current.position.y, -0.1, 4, delta);
-      
-    }
+    group.current.rotation.z = THREE.MathUtils.damp(group.current.rotation.z, -0.1, 4, delta);
+     }else{
+       group.current.rotation.z = THREE.MathUtils.damp(group.current.rotation.z, 0, 1, delta);
+       group.current.position.y = THREE.MathUtils.damp(group.current.position.y, -0.1, 4, delta);
+  
+     }
+
+   
     group.current.position.z = THREE.MathUtils.damp(group.current.position.z, Math.max(0, data.delta * 100), 4, delta)
+    if(myState.pause === false){
+      group.current.position.x -= .05
+    }
+
+    if(group.current.position.x < -115){
+      myState.effectToggle = true
+      myState.shouldDistort=true
+      gsap.to( group.current.position, {x:30,duration:4,onComplete:setEffectToggle})
+
+      // group.current.position.y = -5
+
+    }else{
+      myState.shouldDistort=false
+
+    }
     // group.current.position.x -= 0.1
     // ref.current.material.grayscale = THREE.MathUtils.damp(
     //   ref.current.material.grayscale,
@@ -254,9 +564,13 @@ function Image(props) {
     // );
   });
   return (
+    // <Float  rotationIntensity={0.5} floatIntensity={3} speed={1}>
+
     <group ref={group}>
       <ImageImpl ref={ref} {...props} />
     </group>
+    // </Float>
+
   );
 }
 
@@ -266,18 +580,24 @@ function Page({ m = 0.4, urls, ...props }) {
   const { width } = useThree((state) => state.viewport);
   const w = width < 10 ? 1.5 / 3 : 1 / 3;
   useFrame((state, delta) => {
-    if(img.current){
+    if(img.current.position.x < -width * 2)
+    {
+      console.log('i am out of the screen')
        //img.current.rotation.z += .1
        //img.current.position.y = Math.sin(delta * 10) -1 
 
     }
 });
   return (
+
     <group {...props}ref={img}>
+
       <Image  position={[-width * w, 0, -1]} scale={[width * w - m * 2, 5, 1]} url={urls[0]} />
       <Image position={[0, 0, 0]} scale={[width * w - m * 2, 5, 1]} url={urls[1]} />
       <Image position={[width * w, 0, 1]} scale={[width * w - m * 2, 5, 1]} url={urls[2]} />
+    
     </group>
+
 
   );
 }
@@ -288,17 +608,42 @@ function Pages() {
   const y = 0
   return (
     <>
+    
       <Page position={[-width * 1, y, z]} urls={["./img1/1.jpg", "./img1/2.jpg", "./img1/3.jpg"]} />
       <Page position={[width * 0, y, z]} urls={["./img1/4.jpg", "./img1/5.jpg", "./img1/6.jpg"]} />
       <Page position={[width * 1, y, z]} urls={["./img1/7.jpg", "./img1/8.jpg", "./img1/9.jpg"]} />
       <Page position={[width * 2, y, z]} urls={["./img1/1.jpg", "./img1/2.jpg", "./img1/3.jpg"]} />
       <Page position={[width * 3, y, z]} urls={["./img1/4.jpg", "./img1/5.jpg", "./img1/6.jpg"]} />
+
+{/* 
+      <Page position={[-width * 1, y + 3, z]} urls={["./img1/1.jpg", "./img1/2.jpg", "./img1/3.jpg"]} />
+      <Page position={[width * 0, y + 3, z]} urls={["./img1/4.jpg", "./img1/5.jpg", "./img1/6.jpg"]} />
+      <Page position={[width * 1, y + 3, z]} urls={["./img1/7.jpg", "./img1/8.jpg", "./img1/9.jpg"]} />
+      <Page position={[width * 2, y + 3, z]} urls={["./img1/1.jpg", "./img1/2.jpg", "./img1/3.jpg"]} />
+      <Page position={[width * 3, y + 3, z]} urls={["./img1/4.jpg", "./img1/5.jpg", "./img1/6.jpg"]} />
+      */}
+
      
       <Page position={[width * 4, y, z]} urls={["./img1/7.jpg", "./img1/8.jpg", "./img1/9.jpg"]} />
-      {/* <Page position={[width * 5, y, z]} urls={["./img/7.jpg", "./img/8.jpg", "./img/7.jpg"]} />
-      <Page position={[width * 6, y, z]} urls={["./img/8.jpg", "./img/8.jpg", "./img/7.jpg"]} />
-      <Page position={[width * 7, y, z]} urls={["./img/9.jpg", "./img/8.jpg", "./img/7.jpg"]} />
-      <Page position={[width * 8, y, z]} urls={["./img/1.jpg", "./img/8.jpg", "./img/7.jpg"]} /> */}
+      <Page position={[width * 5, y, z]} urls={["./img1/7.jpg", "./img1/8.jpg", "./img1/7.jpg"]} />
+      <Page position={[width * 6, y, z]} urls={["./img1/8.jpg", "./img1/8.jpg", "./img1/7.jpg"]} />
+      <Page position={[width * 7, y, z]} urls={["./img1/9.jpg", "./img1/8.jpg", "./img1/7.jpg"]} />
+      <Page position={[width * 8, y, z]} urls={["./img1/1.jpg", "./img1/8.jpg", "./img1/7.jpg"]} />
+
+
+
+
+      <Page position={[-width * 1, y+10, z]} urls={["./img1/1.jpg", "./img1/2.jpg", "./img1/3.jpg"]} />
+      <Page position={[width * 0, y+10, z]} urls={["./img1/4.jpg", "./img1/5.jpg", "./img1/6.jpg"]} />
+      <Page position={[width * 1, y+10, z]} urls={["./img1/7.jpg", "./img1/8.jpg", "./img1/9.jpg"]} />
+      <Page position={[width * 2, y+10, z]} urls={["./img1/1.jpg", "./img1/2.jpg", "./img1/3.jpg"]} />
+      <Page position={[width * 3, y+10, z]} urls={["./img1/4.jpg", "./img1/5.jpg", "./img1/6.jpg"]} />
+     
+      <Page position={[width * 4, y+10, z]} urls={["./img1/7.jpg", "./img1/8.jpg", "./img1/9.jpg"]} />
+      <Page position={[width * 5, y+10, z]} urls={["./img1/7.jpg", "./img1/8.jpg", "./img1/7.jpg"]} />
+      <Page position={[width * 6, y+10, z]} urls={["./img1/8.jpg", "./img1/8.jpg", "./img1/7.jpg"]} />
+      <Page position={[width * 7, y+10, z]} urls={["./img1/9.jpg", "./img1/8.jpg", "./img1/7.jpg"]} />
+      <Page position={[width * 8, y+10, z]} urls={["./img1/1.jpg", "./img1/8.jpg", "./img1/7.jpg"]} />
 
     </>
   );
